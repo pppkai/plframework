@@ -1,0 +1,595 @@
+/**
+ +------------------------------------------------------------------------------
+ * PLFrame 框架说明文档
+ +------------------------------------------------------------------------------
+ * @author   pengzl<pengzl_gz@163.com> www.plframe.com
+ * @update   2010-8-13
+ * @version  v0.6.4
+ +------------------------------------------------------------------------------
+ */
+一、PLFrame 框架结构说明
+框架包括三个主目录，分别：
+1> PLFrame      框架基础程序目录
+2> 项目目录      具体项目后台程序目录(此目录名会因项目名不同而异)
+3> 项目静态文件目录      具体项目生成静态页面目录(此目录名会因项目名不同而异)
+4> 项目类文件命名约定
+    类名: 类名.class.php(单个单词首字母大写，两个以上的则第二个单词起首字母大写)
+    表名: 项目前缀缩写小写/大写+表名称首字母大写
+    字段名: 表名除去前缀缩写_字段名(单个单词全部小写，两个以上的则第二个单词起首字段大写)
+
+二、PLFrame 框架主要功能及应用简要说明
+1> 框架特点简洁干净，适用于对大中小型网站的统一开发与管理，尤其适用于对生成纯静态页面的中小型网站的开发。
+    框架主程序简洁轻便，路径解析简单，框架模板为SMARTY，
+    并集各常用函数、分页、图片上传综合处理、数据库表数据导入导出、静态页面生成、基于MemCache的缓存类、基于phpmailer的邮件收发类等类于一体，方便扩展。
+
+2> 框架环境配置：
+    共分成三类，系统定义文件defines.php、系统配置文件convention.php、环境配置文件environment.php，
+    其中系统配置文件分为两份，一份为系统默认的配置文件存于/PLFrame/Common/convention.php，
+    另一份为自定义项目配置文件，存放于 /项目名/conf/config.inc.php，如果项目配置文件为空或不存在则不加载项目配置文档。
+    一般不建议直接更改框架的系统配置文件convention.php，若有需要则可更改增减自定义的项目配置文件。
+    同样系统定义文件也分为两份，一份为系统默认的定义文件存放于/PLFrame/Common/defines.php，此系统定义文件若非绝对必要则请勿更改，否则有可能造成系统不能运作。
+    另一份为自定义项目定义文件，存放于 /项目名/conf/defines.php，有需要可自行创建或更改此文件，框架会自动加载，同样如果项目定义文件为空或不存在则不加载。
+    系统环境配置文件存放于/PLFrame/Common/environment.php, 一般不需做更改。
+    框架是通过统一项目入口文件index.php来完成项目所要求的环境配置与各类及逻辑文件的加载的。
+
+3> 框架基础程序只完成三件事：
+    1. 环境变量设置与系统公用类库加载，包括（系统配置文件、系统定义文件、DB中间处理层、SMARTY类、出错处理类、Cache类）。
+    2. 依据配置选项完成系统通用登陆验证、模块权限验证、自动安全初步过滤包括（$_POST,$_GET,$_REQUEST）。
+    3. 简单路径解析，定位并加载文件。
+
+4> 框架是基于伪MVC三层结构方式实现：
+    M层暂时分成两块，一块是数据库中间处理，另一块是逻辑层实现功能所需的数据处理部分；
+    此块实现也分两部分，第一部分是逻辑层与数据库的数据交换，此处封装在框架主程序下的一个DB类里，
+    另一部分为逻辑层为现实业务层功能所做的数据处理，此部分封装于与本逻辑实现程序同名的类里面，其默认存放目录为/ui/module/module名/action名.class.php；
+    V层则通过SMARTY类来解析实现；
+    C层则是通过简单的路径解析来定位指定逻辑控制文件的方式实现。
+    简单路径解析说明下如：
+        框架默认采用传统URL参数形式，路由主要通过action与module这两个特定参数来实现，两参数名字可在/PLFrame/Common/defines.php文件里面定义，也可以在项目目录/conf/新建defines.php来定义,如:
+        define('URL_MODULE', 'M');    // URL模块名参数
+        define('URL_ACTION', 'A');   // URL文件名参数    
+        action 表示逻辑文件名（不带后缀），module 表示逻辑文件所属目录。
+    具体如：http://www.plframe.com/?A=login&M=user 解析后实际指向的文件为 /项目逻辑文件路径/module名/action名.php。
+    若项目逻辑文件路径为ui/pages，则上述地址通过解析后实际加载的文件为 /ui/pages/user/login.php，
+    若在地址栏非通过项目入口文件 index.php 而直接加载项目目录下某个文件，则此文件将处于脱离框架环境独立运行状态。
+
+5> 框架入口文件说明如下：
+    /*
+    define('PLFRAME_PATH', '../PLFrame');          // 定义框架目录
+    define('APP_NAME', 'PLFrame');                // 定义项目名称
+    define('APP_PATH', dirname(__FILE__));       // 定义项目目录
+    require_once(PLFRAME_PATH.'/PLFrame.php');  // 加载框架文件
+    $App = new App();   // 实例化框架环境
+    $App->Run();       // 解析路径/判断验证/加载逻辑文件
+    */
+
+6> 项目目录下所有子目录可自动生成。
+
+7> 框架应用环境 
+   APACHE 2.0 及以上版本 
+   PHP 5.0 及以上版本
+   MYSQL 5.0 及以上版本   
+
+
+三、简单URL路由拼装实现
+1> 可实现类似于如下URL解析:
+     http://www.PLFrame.com/module/action/page/4/id/3
+     解析后为:
+     http://www.PLFrame.com/?MOD=module&ACT=action&page=4&id=3
+     
+     要实现这种URL的拼装，先得在系统配置文件convention.php或项目自定义配置文件里面将URL_MODE设置成true
+     然后在项目根目录下面创建.htaccess 文件，其内容如下:
+     <IfModule mod_rewrite.c>
+        RewriteEngine on
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteRule ^(.*)$ /?urlpath=$1 [QSA,PT,L]    
+    </IfModule>
+    
+    最后再APACHE的虚拟域名配置文件里面找到项目所用的域名设置项<VirtualHost></VirtualHost>，
+    在其中再找到<Directory></Directory>,将AllowOverride None 改成 AllowOverride All，
+    若没有<Directory></Directory>,则增加如下内容
+    <Directory 目录路径>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Order allow,deny
+        allow from all
+        DirectoryIndex index.php
+    </Directory> 在<VirtualHost></VirtualHost>中间重启APACHE即可. 
+    
+2> 可实现url参数名自定义, /PLFrame/Common/defines.php里面修改如下两项:
+    define('URL_MODULE', 'MOD');    // URL模块名参数
+    define('URL_ACTION', 'ACT');   // URL文件名参数
+    
+    则url具体形为:
+    http://www.PLFrame.com/?MOD=module&ACT=action&page=4&id=3
+	
+
+
+四、框架目录结构详细说明
+1> 框架目录结构说明
+    /PLFrame
+    |__/Common      //----系统定义文件及缺省配置文件存放目录
+    |  |____cache.inc.php    缓存配置文件  
+    |  |____convention.php   系统配置文件  
+    |  |____defines.php      系统定义文件
+    |  |____functions.php    公用函数库
+    |  |____lang.inc.php     中文提示语言文件
+    |  |____environment.php  环境配置文件
+    |  
+    |__/Include    //----公用功能文件夹 (公用功能文件放于此文件夹下可自动载入)
+    |  |____Image.class.php  公用图片上传处理类
+    |  |____Page.class.php   公用分页类  
+    |  |____makeHTML.class.php    生成静态文件类  
+    |  |____AuthCode.class.php    加解密字串类
+    |  |____Email.class.php       基于PHPMailer的邮件收发类  
+    |  |____CheckCode.class.php   生成验证码类  
+    |  |____makeTable.class.php   后台各类提交表单生成类  
+    |  |____upLoadFile.class.php  批量上传文件处理类  
+    |  |____DBExport.class.php    数据库导入导出操作类  
+    |
+    |__/Lib        //----系统核心文件存放目录
+    |  |__/Db     //----数据处理中间层类目录
+    |  |  |____db.class.php        数据处理中间层类文件
+    |  |
+    |  |__/Net    //----网络应用相关类目录
+    |  |  |____Http.class.php      数据文件下载处理类文件
+    |  |
+    |  |__/PLFrame  //----框架基类存放目录
+    |  |  |____App.class.php              框架环境配置初始化/URL解析/公共模块加载等处理类(C层实现类)
+    |  |  |____Base.class.php             原始基类
+    |  |  |____Log.class.php              日志处理类  
+    |  |  |____Cache.class.php            基于MemCache缓存处理类  
+    |  |  |____PLFException.class.php     错误捕捉处理类
+    |  |  |____core.class.php             环境初始化类 
+    |  |  |____AutoLoad.class.php         实现类自动加载 
+    |  |  |____View.class.php             V层实现类
+    |  |  |____verifyRules.class.php      模块权限验证类
+    |  |  
+    |  |__/Smarty    //----Smarty模板类库目录
+    |  |
+    |  |__/Util      //----其他核心基类文件目录
+    |
+    |__/Tpl          //----系统模板文件目录
+    |  |____OutPutERMSG.tpl.php            错误输出模板
+    |
+    |__/Vendor       //----第三方类库目录 (第三方扩展类文件夹)
+       |__/Db_Separate    //----独立于框架外的数据库处理类
+       |  |_____db.class.php                 数据处理中间层类
+       |  |_____db.config.php                配置文件
+       |                 
+       |__/PHPMailer_v5.1    //----第三方邮件收发类
+       
+
+2> 项目目录结构说明
+    以下均为系统定制的目录，可在安装框架时自动生成，其他目录可按需求另行创建，如图片目录images，JS文件目录JS等。
+    /cache ----------- smarty缓存文件目录
+    /conf ------------ 项目配置文件存放目录(config.inc.php/language_cn.inc.php等)
+    /logs ------------ 项目日志文件存放目录 
+    /tmp ------------- smarty编译模板临时存放目录
+    /uploadfile ------ 上传文件存放目录
+    /ui -------------- 项目php代码与模板目录
+    |__________ /module  项目自定义类文件存放目录(M)
+    |            |______ /public 站点自定义通用类文件目录 此目录下的类文件可自动按类名载入文件 用时直接实例化即可 无需写include
+    |            |______ /当前模块名目录 如 /?MOD=home&ACT=home 则若存在/module/home/Home.class.php类, 则此类可自动载入,用时无需另外include
+    |  
+    |__________ /pages   此目录下分不同模块名存放各模块下的所有php逻辑实现代码(C) 
+    |            |______ /home   如 /pages/home/home.php  
+    |
+    |__________ /style  此目录下分不同模块名存放各模块下的所有模板文件(V) 
+                 |______ /home   如 /style/home/home.html
+
+
+五、框架类功能及调用说明
+1> Db类库调用方法及说明
+
+    创建对象：
+    $_DBObj = new db();
+    或者
+    $_DBObj = get_instance('db');
+    
+    获取单例对象:
+    $_DBObj = db::getInstance();
+
+    查询方法
+    1. 自定义SQL语句查询 例:
+    $SQL = "select id, a_name from fyh_article where 1 order by id desc limit 60";
+    $Result = $_DBObj->getAll($SQL);//取所有记录到一个二维数组,以字段名做为数组键值名
+    $Result[0]['id'] //表示第一条记录的ID值
+    
+    $Result = $_DBObj->getAll($SQL, 'fetch_row');//取所有记录到一个二维数组,以字段序号做为数组键值名
+    $Result[0][0] //表示第一条记录的ID值
+    
+    $Result = $_DBObj->getOne($SQL);//取一条记录到一个一维数组,以字段名做为数组键值名
+    $Result['id'] //表示记录的ID值
+    
+    $Result = $_DBObj->getOne($SQL, 'fetch_row');//取一条记录到一个一维数组,以字段序号做为数组键值名
+    $Result[0] //表示记录的ID值
+    
+    $SQL = "select id, a_name from fyh_article where id = 1";
+    $Result = $_DBObj->getCell('a_name', $SQL);//取某字段的值
+    $Result //表示ID=1的a_name字段的值
+
+    2. select方法查询 例:
+    $_array_select = array(
+                            'keys'=>'id,a_name'或array('id', 'a_name'),
+                            'order'=>'id desc',
+                            'limit'=>'60'
+                           );
+
+    $Result = $_DBObj->select('fyh_article', $_array_select);//取所有记录到一个二维数组,以字段名做为数组键值名 fyh_article为表名 下同
+    $Result[0]['id'] //表示第一条记录的ID值
+
+    $_array_select = array(
+                            'keys'=>'id,a_name',
+                    		'where'=>array('id'=>'1','fid'=>'2','_logic_'=>'and'),
+                            'order'=>'id desc',
+                            'limit'=>'60'
+                           );
+    $Result = $_DBObj->select('fyh_article', $_array_select);//取id=1 AND fid=2的记录到一个二维数组,以字段名做为数组键值名 fyh_article为表名 下同
+    $Result[0]['id'] //表示第一条记录的ID值
+                        
+    3. insert update delete execute 方法 例:
+    $_array_Insert = array('value'=>array('a_name'=>'文章名',
+                                          'a_title'=>'文章标题',
+                                          'a_content'=>'文章内容')
+                          );
+    $Result = $_DBObj->insert('fyh_article', $_array_Insert);//插入一条记录,返回插入ID
+    
+    $_array_Update = array('value'=>array('a_status'=>'1'),'where'=>'id=1');
+    或等同于
+    $_array_Update = array('value'=>array('a_status'=>'1'),'where'=>array('id'=>'1'));
+    $Result = $_DBObj->update('fyh_article', $_array_Update);//更新一条ID=1的记录的status值为1,返回受影响的记录数.
+    
+    $_array_Delete = array('where'=>array('id'=>'1'));
+    $Result = $_DBObj->delete('fyh_article', $_array_Delete);//删除记录ID=1的记录,返回受影响的记录数.
+    
+    $Result = $_DBObj->execute($SQL);//执行自定义的 insert update delete SQL 语句,返回受影响的记录数或插入ID.
+    
+    4. 其他方法调用自行查看db.class.php代码
+
+    5. DB类中拼装where条件字段形式说明
+        表达式运算符说明:
+        'eq'    表示 '='
+        'neq'   表示 '!='
+        'gt'    表示 '>'
+        'egt'   表示 '>='
+        'lt'    表示 '<'
+        'elt'   表示 '<='
+        'in'    表示 ' IN '
+        'notin' 表示 ' NOT IN '
+        'like'  表示 ' LIKE '
+
+    6. 常用where条件形式说明
+       A. array('id'=>'1') 与形式E效果相同
+       拼装后为: `id`=1
+        
+       B. array('id'=>'1','fname'=>'PLFrame') 与形式G效果相同
+       拼装后为: `id`=1 AND `fname`='PLFrame' 
+       
+       C. array('id'=>'1','fname'=>'PLFrame','_logic_'=>'or') 
+       拼装后为: `id`=1 OR `fname`='PLFrame' 
+        
+       D. array('id'=>'1','fname'=>'PLFrame',array('fid'=>'(1,2,3,4,5)','_exp_'=>'in'),'_logic_'=>'or')
+       拼装后为: `id`=1 OR `fname`='PLFrame' OR `fid` IN (1,2,3,4,5) 
+        
+       E. array(array('id'=>'1'))
+       拼装后为: `id`=1
+       
+       F. array(array('id'=>'1','_exp_'=>'gt'))
+       拼装后为: `id`>1
+        
+       G. array(array('id'=>'1'),array('fname'=>'PLFrame'))
+       拼装后为: `id`=1 AND `fname`='PLFrame' 
+        
+       H. array(
+            array(
+                'id'=>'1','_exp_'=>'gt'
+            ),
+            array(
+                'fid'=>'1','_exp_'=>'gt'
+            ),
+            'fname'=>'PLFrame',
+            '_logic_'=>'or')
+       拼装后为: `id`>1 OR `fid`>1 OR `fname`='PLFrame' 
+            
+       I. 直接写条件字符串,如: "`id`=1 AND `fname`='PLFrame'" 
+    
+       J. array('id'=>'1', array('fname'=>"'%PLFrame%'", '_exp_'=>'like'),'_logic_'=>'or')
+       拼装后为: `id`=1 OR `fname` LIKE '%PLFrame%'
+    
+
+2> Smarty方法调用说明
+    实例化
+    1. 对于不封装逻辑层数据处理的逻辑文件可直接实例化输出控制类View,例:
+    $_ViewObj = new View();
+
+    2. 对于需封装逻辑层数据处理的逻辑文件可继承View类后再实例化,例Home.class.php:
+    class Home extends View
+    {
+        /**
+        * @brief 构造函数
+        * 
+        * 默认构造函数
+        */	
+        function __construct()
+        {
+            parent::__construct();
+        }
+    }
+    $_ViewObj = new Home();
+
+    3. 模板调用说明
+    $_ViewObj->set('CONTENT','文章内容');    //给模板变量CONTENT赋值为'文章内容';
+    $_array_set = array(
+                        'CONTENT'=>'文章内容',
+                        'TITLE'=>'文章标题'
+                       );
+    $_ViewObj->set($_array_set);    //给模板变量CONTENT与TITLE赋值,数组键值对应模板内变量名;
+    
+    $_ViewObj->view('article');      //输出模板目录下面的当前$module目录下面的article.html到浏览器,.html后缀可以在项目配置文件内设置;
+    $_ViewObj->view('user:login');  //输出模板目录下面的user目录下面的login.html到浏览器;
+    $_content = $_ViewObj->view('user:login',true);
+    或
+    $_content = $_ViewObj->view('user/login',true);  //返回解析后的模板目录下面的user目录下面的login.html页面的内容到变量$_content;
+    
+    Smarty模板内变量及循环等使用语法请参阅Smarty手册.
+
+3> 静态文件生成类说明(只能静态调用不能实例化)
+    1. makeHTML::getFileContent(文件路径或web地址);
+    获取指定路径文件或web地址页面的内容。
+    
+    2. makeHTML::set(变量名或数组);
+    给模板中指定变量赋值，支持数组，数组键值为变量，对应值为变量的值。
+    如：
+    makeHTML::set('articleTitle','文章标题');
+    $_array_set = array(
+                        'articleContent'=>'文章内容',
+                        'articleTitle'=>'文章标题'
+                       );
+    makeHTML::set($_array_set);
+
+    3. makeHTML::generate($filename, $tplfile, $clear = true);//生成成功则返回字节数，否则返回false;
+    $filename --- 需生成文件的文件名（带全路径）
+    $tplfile  --- 模板文件的文件名（带全路径 模板内是直接写PHP语法的）
+    $clear    --- 当文件生成完后是否清除当前内存中静态变量的值。
+    
+    示例如：
+    /* 指定模板文件路径 */
+    $_template_file = ROOT . '/xywebfy/template/gameOrder.tpl.php';
+    
+    gameOrder.tpl.php 内容如下:
+    /*
+    <?php
+    /**
+     * @desc 游戏资料排序页模板
+     */
+    ?>
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title><?php echo $articleTitle; ?></title>
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="content"><?php echo $articleContent; ?></div>
+    </body>
+    </html>    
+    */
+    
+    /* 指定生成文件路径 */
+    $_target_file   = ROOT . '/xywebfy/html/gameHtml/index.html';
+    $_artn = makeHTML::generate($_target_file, $_template_file);
+    
+    4. makeHTML::view($tplfile, $clear=true); // 解析模板并输出到浏览器;
+    $tplfile  --- 模板文件的文件名（不带后缀）
+    $clear    --- 是否清除当前内存中静态变量的值
+    例如:
+    makeHTML::view('article');      // 输出模板目录下面的当前$module目录下面的article.html到浏览器,.html后缀可以在项目配置文件内设置;
+    makeHTML::view('user:login');  // 输出模板目录下面的user目录下面的login.html到浏览器;
+    makeHTML::view('admin/competence');  // 输出模板目录下面的admin目录下面的competence.html到浏览器;
+    
+
+4> 公用图片处理类说明
+    此类主要完成各类图片的上传/等比清晰缩略/图片水印/文字水印功能。
+    1. 主要常用方法及示例如下:
+    $filename_info 	= pathinfo($_FILES['file']['name']); // 获取上传文件信息
+    $saveFileName 	= time().rand(0,999999999).".".$filename_info['extension']; // 生成上传文件保存名字。
+    		
+    $savePath 	= ROOT . "/xypublic/photo/con_img/";// 上传图片原文件保存路径
+    $img 		= new Image(); // 创建对像
+    
+    $file 		= $img->setsaveName($saveFileName)->upfile("file", $savePath); // 上传文件到指定位置
+    												
+    $smallpath	= ROOT . "/xypublic/photo/shrink/"; // 缩略图保存路径
+    $file_shrink 	= $img->setShrinkWidth(175) // 缩略图的宽度
+    		->setShrinkHeight(135)  // 缩略图的高度
+    		->setShrinkType("jpg")  // 缩略图后缀名
+    		->setsaveName("small_".$saveFileName) // 缩略图片保存文件名
+    		->resizeImage($file,$smallpath);  // 生成缩略图
+    
+    $waterlogo	= ROOT . "/xypublic/xyimg/xylogo.gif"; // 水印图片LOGO
+    $waterpath	= ROOT . "/xypublic/photo/picWater/"; // 生成加水印后图片保存路径
+    $file_water 	= $img->setsaveName($saveFileName) // 保存名字
+    		->setImgWaterPosType(4)            // 水印位置 4 为右下解
+    		->read_waterImg($waterlogo)    // 读取水印LOGO文件，文件不存在则不加水印
+    		->createImg($file,$waterpath); // 生成加水印的图片
+    		
+    		
+
+5> 公用分页类说明
+    主要用来完成页面数据分页显示页码及数据分页生成。
+    示例说明如下：
+    $_array_set = array(
+    	'total'=>intval($totalRecord), // 总记录数
+    	'perpage'=>PAGESIZE            // 每页显示记录数
+    );
+    
+    $pageobj = new Page($_array_set); // 创建分页类对象
+    $pager   = $pageobj->show();  // 返回分页页码
+
+6> 具体项目配置文件参考示例如下:
+    1. 存放路径为:/项目名/conf/config.inc.php
+    2. config内容及常用参数说明:
+    /*
+    <?php
+    /**
+     +------------------------------------------------------------------------------
+     * 自定义项目配置文件 
+     +------------------------------------------------------------------------------
+     * @category    
+     * @package  
+     * @author   pengzl <pengzl_gz@163.com>
+     * @version  $Id: $
+     +------------------------------------------------------------------------------
+     */
+    if (!defined('PLFRAME_PATH')) exit();
+    return array(
+    	/* DB参数 */
+    	'DB_HOST'=>						'localhost',  
+    	'DB_NAME'=>						'',
+    	'DB_USER'=>						'root',
+    	'DB_PWD'=>						'',
+    	'DB_PORT'=>						'3306',
+    	'USER_SESSION_KEY'=>	  '_PLFRAME_ID_',	 // 用户ID标识
+    	'TEMPLATE_SUFFIX'=>		'.html',        // 默认模板文件后缀
+    	'AUTO_FILTER'=>       true,            // 是否开启自动输入过滤 true||false
+    	'NOT_AUTO_FILTER_LIST'=>  array(''),  // 不开启自动输入过滤的 action名标识
+    	'LOGIN_AUTO_CHECK'=>  true,          // 是否开启页面登陆验证 true||false
+    	'LOGIN_CHECK_ARR'=> 	'admin|*',  // 当AUTO_CHECK设为true时此配置方被启用 作用于SESSION验证页面配置 数组格式 module名称|action名称 module名称|* 表示此模块下所有页面均需做验证  例:注册页面 user|register 当然一般注册页面不能设为自动验证
+    	'RULES_MODE'=>       true,                  // ACTION权限验证 true||false
+    	'RULES_LIST'=>       array('admin'),       // 指定验证模块名    
+    	'EMV_MODE'=>			'Users',	      // 运行环境默认 Users 用户模式  Development 开发模式 
+    	'DEBUG_LOG'=> 		true,       // 写出错日志 true||false
+        'ERROR_DSP'=> 		'Off',     // 是否显示出错信息 On||Off
+        'DEBUG_MODE'=> 		false     // 开启调式模式 true||false
+    );
+    ?>
+    */
+
+7> 数据库导入导出操作类(DBExport)方法说明
+    1. 生成JSON格式字串方法
+       调用方式: DBExport::toExtJson($table, $star = "0", $limit = "10", $cons = "")
+       参数说明:
+          $table 需导出的表名
+          $star 开始导出的记录数
+          $limit 导出记录条数
+          $cons 条件字段 其说明请参考 标题五中的第5点说明.
+       返回: 拼装好的JSON格式字串
+    
+    2. 生成XML格式字串方法
+       调用方式: DBExport::toExtXml($table, $star = "0", $limit = "10", $cons = "")
+       参数说明:
+          $table 需导出的表名
+          $star 开始导出的记录数
+          $limit 导出记录条数
+          $cons 条件字段 其说明请参考 标题五中的第5点说明.
+       返回: 拼装好的Xml格式字串
+       
+    3. 将表数据输出成word文档方法
+       调用方式: DBExport::toWord($table, $mapping, $fileName)
+       参数说明:
+          $table 需导出的表名
+          $mapping 表头字段 形式如:array('name'=>'名称','sex'=>'性别','age'=>'年龄')
+          $fileName 文档名称 无需'.doc'后缀
+       返回: 直接提示文件下载   
+    
+    4. 将表数据输出成Excel文档方法
+       调用方式: DBExport::toExcel($table, $mapping, $fileName)
+       参数说明:
+          $table 需导出的表名
+          $mapping 表头字段 形式如:array('name'=>'名称','sex'=>'性别','age'=>'年龄')
+          $fileName 文档名称 无需'.xls'后缀
+       返回: 直接提示文件下载   
+    
+    5. 生成单表或多表的INSERT语句方法(备份表数据时用)
+       调用方式: DBExport::Backup($table, $fields)
+       参数说明:
+          $table 需导出的表名 可为字符串 如array('fyh_keys','fyh_user')
+          $fields 需导出的表字段 默认为全部字段 如array('fyh_keys'=>array('f_name','f_title'))
+       返回: string   
+    
+    6. 导出成指定文件名的SQL文件
+       调用方式: DBExport::backup2file($table, $fields=array(), $file='default')
+       参数说明:
+       参数说明:
+          $table 需导出备份的表名
+          $fields 需导出的表字段 默认为全部字段 如array('fyh_keys'=>array('f_name','f_title'))
+          $file  文档名称 无需'.sql'后缀
+       返回: 直接提示文件下载   
+    
+    7. 导出直接写文件 
+       调用方式: DBExport::backupToFile($table, $fields=array(), $file='default.sql')
+       参数说明:
+       参数说明:
+          $table 需导出备份的表名
+          $fields 需导出的表字段 默认为全部字段 如array('fyh_keys'=>array('f_name','f_title'))
+          $file 文档名称 file可带路径 需指定后缀名
+       返回: 写入字节数/false   
+       
+    8. 批量执行INSERT操作 
+       调用方式: DBExport::doInsert($table, $sql_str='', $isClear=true)
+       参数说明:
+       参数说明:
+          $table 需插入数据的表名
+          $sql_str insert 格式的字串
+          $isClear  插入数据前是否需清除原表数据  默认是
+       返回: true/false  若返回FALSE则无数据插入
+    
+    9. 从SQL文件恢复表数据 
+       调用方式: DBExport::RestoreFromFile($table, $file='default.sql', $isClear=true)
+       参数说明:
+       参数说明:
+          $table 需插入数据的表名
+          $file  需导入的SQL文件(纯insert语句) 可以带路径
+          $isClear  插入数据前是否需清除原表数据  默认是
+       返回: true/false  若返回FALSE则无数据插入   
+    
+    10. 从SQL文本恢复表数据 
+       调用方式: DBExport::RestoreFromContent($table, $content, $isClear=true)
+       参数说明:
+       参数说明:
+          $table 需插入数据的表名
+          $content  insert语句字符串
+          $isClear  插入数据前是否需清除原表数据  默认是
+       返回: true/false  若返回FALSE则无数据插入    
+       
+8> 字串加解密类调用示例(AuthCode.class.php)
+    方法:
+    加密:Encrypt($text, $keys) ---- $text为需要进行加密的字符串, $keys为密钥
+    解密:Decrypt($text, $keys) ---- $text为需要进行解密的字符串, $keys为密钥
+    
+    e.g:    
+    <?php 
+    $keys = 'www#plframe#com'; // 密钥
+    $text = 'www.plframe.com'; // 需要加密的字符串
+    $auth_text = AuthCode::Encrypt($text, $keys); // 加密,得到加密后的字符串 如:A3cGd1EiUn4HdQc/UjUCdg41VGoOOgt0AjNVPAU/
+    dump($auth_text);
+    dump(AuthCode::Decrypt($auth_text, $keys)); // 解密,输出 www.plframe.com
+    ?> 
+    
+9> 缓存类调用说明(Cache.class.php)
+	$Cache = new Cache();
+    $cid = $Cache->set_expire_seconds(600)->makeHashKey($sql); // 以SQL语句生成唯一缓存ID 缓存时间设定为600秒
+    
+    // 保存缓存
+    $Cache->add($cid, $result); // 返回 true || false
+
+    // 取得缓存
+    $data = $Cache->get($cid);
+    
+
+六、框架安装与应用
+    如需建一个名为PLTest的站点，目录定为/wwwroot/PLTest/，那么只需要将PLFrame目录拷至
+    /wwwroot/目录下面，再去/PLTest/目录下面新建一个入口文件index.php，在APACHE里面设置好www.PLTest.com域名
+    指向/wwwroot/PLTest/目录，在IE打开www.PLTest.com，能看到测试信息页面则表示框架就安装好了，然后就可依照说明文档
+    进行代码开发了。如需要自定义项目配置参数，则可在/PLTest/conf/目录下面新建一个config.inc.php的配置文件(如果系统没有自动创建的话)，
+    参照系统配置文件参数说明进行设置。入口文件index.php内容如下:
+    define('PLFRAME_PATH', '../PLFrame');          // 定义框架目录
+    define('APP_NAME', 'PLTest');                 // 定义项目名称
+    define('APP_PATH', dirname(__FILE__));       // 定义项目目录
+    require_once(PLFRAME_PATH.'/PLFrame.php');  // 加载框架文件
+    $App = new App();   // 实例化框架环境
+    $App->Run();       // 解析路径/判断验证/加载逻辑文件
+    
+    而config.inc.php配置文件常用参数见五-6所示   

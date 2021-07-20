@@ -1,0 +1,39 @@
+#summary One-sentence summary of this page.
+#labels Featured,Phase-Requirements,Phase-Support
+
+= The PLFrame framework main functions and application are briefly described =
+
+1> framework features simple and clean, suitable for small and medium-sized sites of unified development and management, especially suitable for generating pure static pages in small website development.
+Main program lightweight framework, path analysis is simple, frame template for SMARTY,
+Union all commonly used functions, paging, picture upload integrated processing, database table data import and export, static page generation, based on the MemCache cache, based on the phpmailer mail kind in one, convenient expansion.
+
+2> framework environment configuration:
+It is divided into three categories, the system definition file defines.php, the system configuration files convention.php, environment configuration file environment.php,
+The system configuration files are divided into two parts, one is the system default configuration file in /PLFrame/Common/convention.php,
+Another one is a custom project configuration files, stored in / project name /conf/config.inc.php, if the project configuration file is empty or does not exist, no project configuration file.
+Is generally not recommended to directly change the framework of the system configuration file convention.php, if necessary, may be altered or custom project configuration file.
+The same system definition file is divided into two parts, one is the system default definition file stored in the /PLFrame/Common/defines.php, the system definition file unless absolutely necessary, please do not change, otherwise may cause system not working.
+Another one is a custom project definition document, is stored in / project name /conf/defines.php, there is a need to create or modify the file, the framework will automatically load, as if the project definition file is empty or does not exist is not loaded.
+System configuration file stored in the /PLFrame/Common/environment.php, generally do not need to change.
+Frame through a unified entrance project file index.php to complete the project requirements of the environment configuration and various and logical file loading.
+
+3> framework based procedure only three things:
+1 environment variable settings and system Public Library ( loading, including system configuration files, the system definition file, DB intermediate layer, class SMARTY, error handling, class Cache ).
+2 on the basis of configuration options to complete system universal login authentication, authorization, automatic security module includes initial filtering ( $_POST, $_GET, $_REQUEST ).
+3 simple path analysis, positioning and loading the file.
+
+4> framework is based on the pseudo MVC three layer structure mode:
+The M layer is temporarily divided into two blocks, a block is a database intermediate processing, the other one is logical layer realizes the function required for the data processing section;
+This block is divided into two parts, the first part is the logic layer and database data exchange, this package in the frame of main program of a DB class,
+Another part is the logic layer is the reality of business layer function does data processing, this part of package with the logic program class of the same name, the default directory for /ui/module/module /action .Class.php;
+The V layer through SMARTY to realize;
+The C layer is through simple path analysis to locate the specified file mode to realize logic control.
+
+Simple path analysis shows such as:
+Frame default to using traditional URL parameter, route primarily through action and module this two specific parameters to achieve, two parameters in the /PLFrame/Common/defines.php file name can be defined, can also be in the project directory /conf/ new defines.php to define, such as:
+Define ( 'URL_MODULE', 'M' ); / / URL module name parameter
+Define ( 'URL_ACTION', 'A' ); / / URL file name parameter
+Action said logical file name ( without a suffix ), module said logical file belongs to the directory.
+Specific example: http://www.plframe.com/? A=login&M=user analysis after the actual points to a file / Project logical file path /module /action .Php.
+If the project logical file path to the ui/pages, the address through analyzing the actual load file /ui/pages/user/login.php,
+If the address bar through the project entrance directly loading project file index.php directory for a file, the file will be separated from the frame of independent operation state.

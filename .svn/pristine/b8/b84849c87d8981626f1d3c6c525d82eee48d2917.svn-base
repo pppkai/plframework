@@ -1,0 +1,35 @@
+2009-07-05
+1. v0.5.8 更新框架 添加加解密字串类
+2. v0.6.0 更新框架核心代码,增加网站根目录非/的支持,如根目录为/plframe/website, URL为http://www.plframe.com/plframe/website/
+具体更新了App.class.php, defines.php, 增加根目录非/的路径获取.
+3. v0.6.1 更新框架函数库文件functions.php, 修改了xmlTOArray()函数的算法.
+4. v0.6.2 更新框架的部分核心程序,包括functions.php函数库,PLFrame.php框架调用程序,Core.class.php环境初始化程序等.
+5. v0.6.3 更新db.class.php类方法getOne写法. 检测limit条件若没有则自动补全, 更新db类条件封装对于长数字/特殊数字当做字串入库.
+6. v0.6.4 更新函数库文件functions.php, 增加键字替换方法, 修改getClientIp()方法.
+7. v0.6.7 更新函数库文件functions.php, 增加字符串TO数组的方法, 修改makeHTML.class.php的getFileContent方法,支持获取web地址内容.
+8. v0.7.0 更新AuthCode.class.php加解密字串类实现方法,由原来的字符串与KEY逐个异或方法转为字符串先对自身进行位移操作再与KEY进行异或.
+
+2011-02-10 
+9. v0.7.1 更新Http.class.php, 添加SOCKET方式POST与GET提交方法, 添加safeUrl方法.
+10. v0.7.2 更新框架报错捕获相关代码，新增加用户级报错信息自动捕获。
+11. v0.7.3 更新函数库functions.php，增加自定义BMP格式图片处理函数。
+12. v0.7.5 更新系统报错类写法，使错误跟踪更加准确。
+13. v0.7.6 修正Image类因环境缺少exif扩展而提示报错的BUG。
+
+2012-06-21 
+14. v0.8.9 更新了App.class.php, 添加自动创建数据库方法.
+15. v0.9.0 更新AuthCode.class.php加解密字串类实现方法,添加密文时间过期检证.
+    密文时间验证测试示例：
+    <?php
+    $keys = 'www#plframe#com'; // 密钥
+    $text = '测试中文-testing chinese!'; // 需要加密的字符串 中文需要保证文件本身编码为utf-8
+    $time_limit = 30; // 密文过期时间(秒)
+    
+    $auth_text = AuthCode::Encrypt($text, $keys); // 加密后密文串, 得到加密后的字符串 如: A3cGd1EiUn4HdQc/UjUCdg41VGoOOgt0AjNVPAU/
+    dump($auth_text); 
+    dump(AuthCode::Decrypt($auth_text, $keys)); // 解密,输出 www.plframe.com
+    
+    $o_auth_text = 'U1FXX1pVJTAzJTA5JTA1JTAwJTBEJTI5JTAxMVIlMDklMDFrUUYlMDBhVnBTMCUwNlYlMDRjJTAxTSUwNjclMDZxVmUlMDQlNUIlMDc0JTA1JTA0JTBFJTNGJTAycCUwMWpQSVMzVkclMEVsUSU0MCUwM2QlMDclM0JTY1BnVmQlMDUlM0YlMDU3JTBEJTYwJTAxMVJnJTAxa1E0JTAwJTYwVjdTMSUwNiUxMSUwNGIlMDE2JTA2NyUwNjdWZSUwNDMlMDc1JTA1ZSUwRSUzRSUwMjElMDFrUCUzQlMyVjYlMEVsUUYlMDNk';
+    dump($o_auth_text);
+    dump(AuthCode::Decrypt($o_auth_text, $keys, $time_limit), '$o_auth_text:'); // 加过期时间解密, 输出 null 表示密文过期
+    ?>
